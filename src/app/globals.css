@@ -1,0 +1,216 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------ */
+/* Trek? brand tokens — see docs/schema.md's sibling, the brandbook,  */
+/* for the source values. Proportion: 60 Bloem / 28 Aubergine /       */
+/* 10 Paprika / 2 Saffraan. Saffraan is a dot, never a theme — it is  */
+/* intentionally NOT wired into any generic interactive-state slot    */
+/* (accent/hover) below, only used explicitly where the brand calls   */
+/* for a highlight (e.g. a "match" moment).                           */
+/* ------------------------------------------------------------------ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-figtree);
+  --font-heading: var(--font-bricolage);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+
+  /* Raw brand palette, for the brand/ components and anywhere the
+     semantic tokens above don't fit (e.g. the drawn wordmark). */
+  --color-bloem: var(--bloem);
+  --color-aubergine-900: var(--aubergine-900);
+  --color-paprika-500: var(--paprika-500);
+  --color-paprika-700: var(--paprika-700);
+  --color-paprika-300: var(--paprika-300);
+  --color-saffraan: var(--saffraan);
+
+  /* Brand-specific semantic roles beyond shadcn's defaults. */
+  --color-surface-2: var(--surface-2);
+  --color-brand-text: var(--brand-text);
+  --color-on-primary: var(--on-primary);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Type scale — see brandbook. Weight is applied via font-bold /
+     font-extrabold utilities where used, not baked in here. */
+  --text-display: 2.75rem;
+  --text-display--line-height: 3rem;
+  --text-display--letter-spacing: -0.015em;
+  --text-title-1: 1.875rem;
+  --text-title-1--line-height: 2.125rem;
+  --text-title-1--letter-spacing: -0.01em;
+  --text-title-2: 1.5rem;
+  --text-title-2--line-height: 1.75rem;
+  --text-title-3: 1.25rem;
+  --text-title-3--line-height: 1.625rem;
+  --text-body-l: 1.0625rem;
+  --text-body-l--line-height: 1.625rem;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.375rem;
+  --text-label: 1rem;
+  --text-label--line-height: 1.25rem;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.125rem;
+  --text-overline: 0.75rem;
+  --text-overline--line-height: 1rem;
+  --text-overline--letter-spacing: 0.08em;
+}
+
+:root {
+  /* Raw palette */
+  --bloem: #fff8ef;
+  --aubergine-900: #241628;
+  --paprika-500: #f05a28;
+  --paprika-700: #b83a12;
+  --paprika-300: #ff8a5c;
+  --saffraan: #ffc23d;
+
+  /* Semantic roles — light */
+  --background: var(--bloem);
+  --foreground: var(--aubergine-900);
+  --card: #ffffff;
+  --card-foreground: var(--aubergine-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--aubergine-900);
+  --primary: var(--paprika-500);
+  --primary-foreground: var(--aubergine-900);
+  --on-primary: var(--aubergine-900);
+  --brand-text: var(--paprika-700);
+  --secondary: #f5eae8;
+  --secondary-foreground: var(--aubergine-900);
+  --surface-2: #f5eae8;
+  --muted: #f5eae8;
+  --muted-foreground: #6e5c70;
+  --accent: #f5eae8;
+  --accent-foreground: var(--aubergine-900);
+  --destructive: #cd264b;
+  --destructive-foreground: #fce4ea;
+  --border: #e6d8c8;
+  --input: #e6d8c8;
+  --ring: var(--paprika-500);
+
+  --success: #23774a;
+  --success-foreground: #e2f2e8;
+  --warning: #ba5a00;
+  --warning-foreground: #fff0cc;
+  --error: #cd264b;
+  --error-foreground: #fce4ea;
+  --info: #2557c9;
+  --info-foreground: #e3ebfc;
+
+  --radius: 0.75rem;
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--on-primary);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  --background: var(--aubergine-900);
+  --foreground: var(--bloem);
+  --card: #33213a;
+  --card-foreground: var(--bloem);
+  --popover: #33213a;
+  --popover-foreground: var(--bloem);
+  --primary: var(--paprika-500);
+  --primary-foreground: var(--aubergine-900);
+  --on-primary: var(--aubergine-900);
+  --brand-text: var(--paprika-300);
+  --secondary: #46324e;
+  --secondary-foreground: var(--bloem);
+  --surface-2: #46324e;
+  --muted: #46324e;
+  --muted-foreground: #c7b7c9;
+  --accent: #46324e;
+  --accent-foreground: var(--bloem);
+  --destructive: #ff8fa3;
+  --destructive-foreground: #45202e;
+  --border: #4f3857;
+  --input: #4f3857;
+  --ring: var(--paprika-500);
+
+  --success: #8fd9ae;
+  --success-foreground: #1e3a2c;
+  --warning: #f2c14e;
+  --warning-foreground: #3d3016;
+  --error: #ff8fa3;
+  --error-foreground: #45202e;
+  --info: #9384ff;
+  --info-foreground: #1f2b40;
+
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--on-primary);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
+  }
+}
+
+/* Sentence case always — questions end in "?", answers end in a full
+   stop. Nothing here enforces that (it's a copy rule), but overlines are
+   the one place the brand allows caps, so this is opt-in per element. */
+.overline {
+  text-transform: uppercase;
+}
