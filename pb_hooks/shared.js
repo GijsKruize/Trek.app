@@ -246,11 +246,38 @@ function isMealRevealed(event) {
   return false;
 }
 
+// Mirrors the Next.js app's `isRsvpLocked` (src/lib/api/events.ts) — kept
+// here too so the guard below and the public share route enforce the same
+// cutoff server-side, not just the UI hiding the buttons.
+function isRsvpLocked(event) {
+  const deadline = parsePbDate(event.get("rsvp_deadline"));
+  return !!deadline && deadline.getTime() <= Date.now();
+}
+
+// Used by rsvp_deadline_guard.pb.js on both create and update — lives here
+// (not as a second top-level function in that file) because a hook
+// callback can't see a sibling top-level declaration in the same .pb.js
+// file (see the note in group_admin_sync.pb.js).
+//
+// No organizer/group-admin bypass here: rsvps.updateRule is already
+// strictly `user = @request.auth.id` (and createRule requires
+// `@request.body.user = @request.auth.id`), so this hook is only ever
+// reached by the RSVP's own owner in the first place — there's no
+// "someone else editing this row" case to carve an exception for.
+function requireRsvpNotLocked(app, record) {
+  const event = app.findRecordById("events", record.get("event"));
+  if (event && isRsvpLocked(event)) {
+    throw new ForbiddenError("RSVP's zijn gesloten voor dit etentje. Neem contact op met de organisator.");
+  }
+}
+
 module.exports = {
   tryFindFirst: tryFindFirst,
   ensureOccurrencesForSeries: ensureOccurrencesForSeries,
   reassignCookIfDeclined: reassignCookIfDeclined,
   isMealRevealed: isMealRevealed,
+  isRsvpLocked: isRsvpLocked,
+  requireRsvpNotLocked: requireRsvpNotLocked,
   syncGroupAdmins: syncGroupAdmins,
   countGroupAdmins: countGroupAdmins,
   requireGuestNameOrUser: requireGuestNameOrUser,

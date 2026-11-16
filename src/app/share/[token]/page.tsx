@@ -3,6 +3,7 @@ import Image from "next/image";
 import { MapPin, EyeOff, Users } from "lucide-react";
 import { TrekWordmark } from "@/components/brand/TrekWordmark";
 import { fetchSharedEvent, sharedRecipeImageUrl } from "@/lib/api/share";
+import { RsvpDeadlinePassed } from "@/components/rsvp/RsvpDeadlinePassed";
 import { GuestRsvpForm } from "./GuestRsvpForm";
 
 const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
@@ -74,7 +75,13 @@ export default async function SharedEventPage({
           {payload.rsvpSummary.yes} {payload.rsvpSummary.yes === 1 ? "persoon komt" : "mensen komen"}.
         </p>
 
-        <GuestRsvpForm token={token} />
+        {payload.rsvpLocked ? (
+          <RsvpDeadlinePassed
+            organizer={{ name: payload.organizerName, phone: payload.organizerPhone, email: payload.organizerEmail }}
+          />
+        ) : (
+          <GuestRsvpForm token={token} />
+        )}
       </div>
     </div>
   );

@@ -43,3 +43,28 @@ export function computeDietWarnings(
 
   return warnings;
 }
+
+/** One attendee's conflicts with a candidate recipe, for the
+ * post-RSVP recipe picker (see events.ts `getRecipeOptionsForEvent`). */
+export interface AttendeeWarning {
+  userId: string;
+  userName: string;
+  warnings: DietWarning[];
+}
+
+/** Same conflict rule as `computeDietWarnings`, run once per attendee and
+ * collapsed to only those who actually have a conflict — the picker shows
+ * "safe for everyone" vs. "conflicts with Tom, Femke" rather than a wall
+ * of empty rows. */
+export function computeAttendeeWarnings(
+  recipeIngredients: RecipeIngredientExpanded[],
+  attendees: Pick<TrekUser, "id" | "name" | "diet_tags" | "allergy_ingredients">[]
+): AttendeeWarning[] {
+  return attendees
+    .map((attendee) => ({
+      userId: attendee.id,
+      userName: attendee.name,
+      warnings: computeDietWarnings(recipeIngredients, attendee),
+    }))
+    .filter((entry) => entry.warnings.length > 0);
+}

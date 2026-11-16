@@ -60,11 +60,14 @@ routerAdd("GET", "/api/trek/share/{token}", (e) => {
     startsAt: event.get("starts_at"),
     location: event.get("location") || groupAddress,
     organizerName: organizer ? organizer.get("name") : "",
+    organizerPhone: organizer ? organizer.get("phone") : "",
+    organizerEmail: organizer ? organizer.get("email") : "",
     cookName: cook ? cook.get("name") : "",
     isSurprise: event.get("is_surprise"),
     revealed: revealed,
     recipe: recipe,
     rsvpSummary: { yes: yesCount, no: noCount },
+    rsvpLocked: shared.isRsvpLocked(event),
   });
 });
 
@@ -74,6 +77,9 @@ routerAdd("POST", "/api/trek/share/{token}/rsvp", (e) => {
   const event = token ? shared.tryFindFirst(e.app, "events", "share_token = {:token}", { token: token }) : null;
   if (!event || event.get("status") === "cancelled") {
     throw new NotFoundError("Dit etentje is niet (meer) beschikbaar.");
+  }
+  if (shared.isRsvpLocked(event)) {
+    throw new ForbiddenError("RSVP's zijn gesloten voor dit etentje. Neem rechtstreeks contact op met de organisator.");
   }
 
   const data = new DynamicModel({ name: "", status: "" });

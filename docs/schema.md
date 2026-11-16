@@ -1,6 +1,6 @@
 # PocketBase schema
 
-Source of truth for the schema is the migration at `pb_migrations/001_initial_schema.pb.js`. This document is the human-readable companion — if the two ever disagree, trust the migration and update this file.
+Source of truth for the schema is the migrations at `pb_migrations/001_initial_schema.pb.js` (everything below except where noted) and `pb_migrations/002_rsvp_deadline_and_phone.pb.js` (`events.rsvp_deadline`, `users.phone`). This document is the human-readable companion — if the two ever disagree, trust the migrations and update this file.
 
 Rule legend: `null` = superuser/dashboard only. `""` = public, no restriction. Anything else is the literal PocketBase filter expression.
 
@@ -15,8 +15,10 @@ These are plain `select` fields, not their own collections — they're small, ap
 ## Collections
 
 ### `users` (built-in auth, extended)
-Custom fields: `name` (text, required), `avatar` (file), `diet_tags` (select, multi), `allergy_ingredients` (relation→ingredients, multi).
+Custom fields: `name` (text, required), `avatar` (file), `phone` (text, optional), `diet_tags` (select, multi), `allergy_ingredients` (relation→ingredients, multi).
 Rules: list/view `@request.auth.id != ""` — any logged-in user can see another's name/diet info (low-sensitivity, needed so cooks/organizers see attendee diets). create `""`. update/delete `id = @request.auth.id`.
+
+`phone` exists purely so `RsvpDeadlinePassed` (the Next.js app) can offer a WhatsApp link to the organizer once `events.rsvp_deadline` has passed — falls back to the organizer's email if left blank.
 
 ### `groups`
 Fields: `name`, `address` (default event location), `image`, `admins` (relation→users, multi, **denormalized**).
@@ -55,9 +57,11 @@ Fields: `group` (optional — empty means personal series), `organizer`, `title`
 Rules: list/view `organizer = @request.auth.id || (group != "" && group.group_members_via_group.user ?= @request.auth.id)`. create `@request.auth.id != "" && (group = "" || group.group_members_via_group.user ?= @request.auth.id)`. update/delete `organizer = @request.auth.id || (group != "" && group.admins ?= @request.auth.id)`.
 
 ### `events` (every occurrence — loose/group × one-off/generated)
-Fields: `series` (optional), `group` (optional), `organizer`, `invitees` (relation→users, multi — see deviation note below), `title`, `starts_at`, `location`, `cook`, `is_surprise`, `revealed_at`, `total_cost_cents`, `status` (`scheduled`|`cancelled`), `share_token` (unique, sparse).
+Fields: `series` (optional), `group` (optional), `organizer`, `invitees` (relation→users, multi — see deviation note below), `title`, `starts_at`, `location`, `cook`, `is_surprise`, `revealed_at`, `total_cost_cents`, `status` (`scheduled`|`cancelled`), `share_token` (unique, sparse), `rsvp_deadline` (date, optional).
 
 `recipe` is **deliberately not a field here** — see the surprise-meal section below.
+
+**`rsvp_deadline`** is set by the organizer at creation (the Next.js form offers "day before" / "day of" + a time, computed client-side into an absolute datetime) and enforced in two places, not just hidden UI: `pb_hooks/rsvp_deadline_guard.pb.js` blocks `rsvps` create/update once `shared.isRsvpLocked(event)` is true, and `pb_hooks/share.pb.js`'s guest-RSVP route checks the same helper directly (that route bypasses the generic collection hooks since it calls `app.save()` from a custom handler, not through the REST create endpoint). Once locked, the app shows `RsvpDeadlinePassed` instead of RSVP buttons, pointing at the organizer's phone (WhatsApp) or email.
 
 Rules: list/view `organizer = @request.auth.id || cook = @request.auth.id || invitees ?= @request.auth.id || (group != "" && group.group_members_via_group.user ?= @request.auth.id)`. create `@request.auth.id != "" && @request.body.organizer = @request.auth.id && (@request.body.group = "" || @request.body.group.group_members_via_group.user ?= @request.auth.id)`. update `organizer = @request.auth.id || cook = @request.auth.id || (group != "" && group.admins ?= @request.auth.id)` — `pb_hooks/events_update_guard.pb.js` additionally blocks a cook-only updater from changing `organizer`/`group`/`invitees`/`status`, since rules can't restrict individual fields. delete `organizer = @request.auth.id || (group != "" && group.admins ?= @request.auth.id)`.
 
@@ -74,6 +78,8 @@ event.cook = @request.auth.id ||
 event.organizer = @request.auth.id
 ```
 write: `event.organizer = @request.auth.id || (event.group != "" && event.group.admins ?= @request.auth.id)`.
+
+**The recipe is chosen after the event exists, not at creation.** The Next.js "nieuw etentje" form no longer offers a recipe picker at all — `src/lib/api/events.ts`'s `createEvent` never touches `event_meals`. Instead, the event detail page shows a `RecipePicker` (to the organizer/group-admin only) once RSVPs start coming in, listing every published recipe annotated with which attendees it conflicts with (`getRecipeOptions` in `src/lib/api/recipes.ts`, built on `computeAttendeeWarnings` in `src/lib/api/diet.ts` — the same diet/allergy rule as the single-viewer `computeDietWarnings`, just run once per attendee). Confirming a choice calls `chooseRecipe`, which upserts the `event_meals` row (one event has at most one meal). This is the point of the diet/allergy check existing at all: picking blind at creation time can't account for who actually ends up coming.
 
 **Why a split collection and not a redaction proxy route:** the event itself (date, attendees, cook, cost) stays on the plain `events` record with simple rules and full realtime support; only the genuinely secret field (`recipe`) lives behind its own rule with the reveal predicate baked in. A hand-rolled proxy route would mean reimplementing pagination/filter/sort/realtime for every place an event is read, for a redaction need that only concerns two sub-resources. Revealing a meal sets `events.revealed_at` **and** re-saves the linked `event_meals` row, so its own realtime subscribers get notified too (an update to `events` alone wouldn't push a realtime event to `event_meals` subscribers).
 
@@ -110,6 +116,7 @@ Known limitation: a guest has no durable identity, so resubmitting the form crea
 | `group_create.pb.js` | Creates the founding admin `group_members` row right after a new group is persisted — same chicken-and-egg problem as invite redemption (a brand-new group has no admins yet, so the creator can't satisfy `group.admins ?= @request.auth.id` to add themselves). |
 | `group_admin_sync.pb.js` | Keeps `groups.admins` in sync with `group_members`; blocks demoting/removing the last admin. |
 | `events_update_guard.pb.js` | Blocks a cook-only updater of `events` from changing `organizer`/`group`/`invitees`/`status`. |
+| `rsvp_deadline_guard.pb.js` | Blocks `rsvps` create/update once `events.rsvp_deadline` has passed (`shared.isRsvpLocked`) — the guest-RSVP route in `share.pb.js` enforces the same rule separately, since it doesn't go through this hook. |
 | `validation_guards.pb.js` | Enforces `guest_name` required when `rsvps.user` is empty, exactly one of `ingredient`/`custom_label` on `shopping_list_items`, and triggers cook reassignment when an assigned cook RSVPs "no". |
 | `invites.pb.js` | `POST /api/trek/invites/redeem`. |
 | `share.pb.js` | The two public share routes. |

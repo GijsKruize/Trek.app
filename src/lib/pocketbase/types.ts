@@ -53,6 +53,7 @@ export interface TrekUser extends BaseRecord {
   email: string;
   name: string;
   avatar: string;
+  phone: string;
   diet_tags: DietTag[];
   allergy_ingredients: string[];
 }
@@ -152,6 +153,7 @@ export interface TrekEvent extends BaseRecord {
   total_cost_cents: number;
   status: "scheduled" | "cancelled";
   share_token: string;
+  rsvp_deadline: string;
 }
 
 export interface EventMeal extends BaseRecord {

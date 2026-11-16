@@ -12,11 +12,14 @@ export interface SharePayload {
   startsAt: string;
   location: string;
   organizerName: string;
+  organizerPhone: string;
+  organizerEmail: string;
   cookName: string;
   isSurprise: boolean;
   revealed: boolean;
   recipe: SharedRecipe | null;
   rsvpSummary: { yes: number; no: number };
+  rsvpLocked: boolean;
 }
 
 export async function fetchSharedEvent(token: string): Promise<SharePayload | null> {

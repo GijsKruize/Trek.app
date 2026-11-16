@@ -2,6 +2,7 @@ import type PocketBase from "pocketbase";
 import { nanoid } from "nanoid";
 import type {
   Group,
+  GroupMember,
   Recipe,
   Rsvp,
   ShoppingListItem,
@@ -41,16 +42,26 @@ export async function getUpcomingEvents(pb: PocketBase, userId: string): Promise
 export interface EventDetail {
   event: EventExpanded;
   attendees: (Rsvp & { expand?: { user?: TrekUser } })[];
+  pendingMembers: TrekUser[];
   recipe: Recipe | null;
   revealed: boolean;
   shoppingList: ShoppingListItem[];
   myStatus: RsvpStatus;
+  rsvpLocked: boolean;
 }
 
 function isMealRevealed(event: TrekEvent): boolean {
   if (!event.is_surprise) return true;
   if (event.revealed_at) return true;
   return new Date(event.starts_at).getTime() <= Date.now();
+}
+
+/** Once the organizer's RSVP cutoff has passed, the guest list is
+ * considered final — RSVP buttons give way to a "text the organizer"
+ * prompt instead of accepting a late change. */
+export function isRsvpLocked(event: Pick<TrekEvent, "rsvp_deadline">): boolean {
+  if (!event.rsvp_deadline) return false;
+  return new Date(event.rsvp_deadline).getTime() <= Date.now();
 }
 
 export async function getEventDetail(
@@ -88,11 +99,35 @@ export async function getEventDetail(
     shoppingList = [];
   }
 
+  // Group events invite every member implicitly (see events.listRule) —
+  // so "who's coming" should show members who haven't responded yet as
+  // pending, not just the rows that already exist in `rsvps`.
+  let pendingMembers: TrekUser[] = [];
+  if (event.group) {
+    const respondedUserIds = new Set(attendees.map((a) => a.user).filter(Boolean));
+    const members = await pb.collection("group_members").getFullList<GroupMember & { expand?: { user?: TrekUser } }>({
+      filter: `group = "${event.group}"`,
+      expand: "user",
+    });
+    pendingMembers = members
+      .map((m) => m.expand?.user)
+      .filter((u): u is TrekUser => !!u && !respondedUserIds.has(u.id));
+  }
+
   const myStatus: RsvpStatus = userId
     ? ((attendees.find((a) => a.user === userId)?.status as RsvpStatus) ?? "pending")
     : "pending";
 
-  return { event, attendees, recipe, revealed, shoppingList, myStatus };
+  return {
+    event,
+    attendees,
+    pendingMembers,
+    recipe,
+    revealed,
+    shoppingList,
+    myStatus,
+    rsvpLocked: isRsvpLocked(event),
+  };
 }
 
 export async function setRsvp(
@@ -133,7 +168,7 @@ export async function revokeShareLink(pb: PocketBase, eventId: string): Promise<
   await pb.collection("events").update(eventId, { share_token: "" });
 }
 
-export async function createLooseEvent(
+export async function createEvent(
   pb: PocketBase,
   data: {
     organizer: string;
@@ -141,22 +176,31 @@ export async function createLooseEvent(
     startsAt: string;
     location: string;
     isSurprise: boolean;
-    recipeId?: string;
+    groupId?: string;
+    rsvpDeadline?: string;
   }
 ): Promise<EventExpanded> {
-  const event = await pb.collection("events").create<EventExpanded>({
+  return pb.collection("events").create<EventExpanded>({
     organizer: data.organizer,
-    group: "",
+    group: data.groupId ?? "",
     title: data.title,
     starts_at: data.startsAt,
     location: data.location,
     is_surprise: data.isSurprise,
     status: "scheduled",
+    rsvp_deadline: data.rsvpDeadline ?? "",
   });
+}
 
-  if (data.recipeId) {
-    await pb.collection("event_meals").create({ event: event.id, recipe: data.recipeId });
+/** The recipe is deliberately not chosen at creation — the organizer
+ * picks it once RSVPs (and therefore the real guest list's allergies)
+ * are in, via `getRecipeOptions`. One event has at most one meal, so this
+ * upserts rather than always creating. */
+export async function chooseRecipe(pb: PocketBase, eventId: string, recipeId: string): Promise<void> {
+  try {
+    const existing = await pb.collection("event_meals").getFirstListItem(`event = "${eventId}"`);
+    await pb.collection("event_meals").update(existing.id, { recipe: recipeId });
+  } catch {
+    await pb.collection("event_meals").create({ event: eventId, recipe: recipeId });
   }
-
-  return event;
 }

@@ -3,6 +3,7 @@ import { Users, Salad, ChevronRight, Plus } from "lucide-react";
 import { getServerPocketBase, getCurrentUser } from "@/lib/pocketbase/server";
 import { getMyGroups } from "@/lib/api/groups";
 import { LogoutButton } from "./LogoutButton";
+import { PhoneForm } from "./PhoneForm";
 
 export default async function ProfielPage() {
   const user = await getCurrentUser();
@@ -20,6 +21,8 @@ export default async function ProfielPage() {
         </div>
         <LogoutButton />
       </div>
+
+      <PhoneForm user={user} />
 
       <Link
         href="/profiel/dieetwensen"

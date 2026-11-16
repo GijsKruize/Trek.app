@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ChefHat } from "lucide-react";
 import type { RecipeWithWarnings } from "@/lib/pocketbase/types";
 import { fileUrl } from "@/lib/pocketbase/client";
@@ -8,7 +9,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeWithWarnings }) {
   const imageUrl = fileUrl(recipe, recipe.image, "recipes");
 
   return (
-    <article className="flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <Link
+      href={`/recepten/${recipe.id}`}
+      className="flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <div className="relative aspect-[4/3] w-full bg-surface-2">
         {imageUrl ? (
           <Image src={imageUrl} alt={recipe.title} fill className="object-cover" />
@@ -29,6 +32,6 @@ export function RecipeCard({ recipe }: { recipe: RecipeWithWarnings }) {
         </div>
         <WarningBadgeList warnings={recipe.dietWarnings} />
       </div>
-    </article>
+    </Link>
   );
 }
