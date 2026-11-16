@@ -31,7 +31,7 @@ export function GuestRsvpForm({ token }: { token: string }) {
   if (done) {
     return (
       <div className="rounded-2xl border border-border bg-success-foreground p-4 text-center text-success">
-        <p className="text-label font-semibold">
+        <p className="text-label">
           {status === "yes" ? `Trek? ${name} komt.` : `Trek? ${name} komt niet.`}
         </p>
       </div>
@@ -50,7 +50,7 @@ export function GuestRsvpForm({ token }: { token: string }) {
         <button
           type="button"
           onClick={() => setStatus("yes")}
-          className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label font-semibold transition-colors ${
+          className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label transition-colors ${
             status === "yes" ? "bg-success text-success-foreground" : "bg-surface-2 text-foreground"
           }`}
         >
@@ -60,7 +60,7 @@ export function GuestRsvpForm({ token }: { token: string }) {
         <button
           type="button"
           onClick={() => setStatus("no")}
-          className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label font-semibold transition-colors ${
+          className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label transition-colors ${
             status === "no" ? "bg-error text-error-foreground" : "bg-surface-2 text-foreground"
           }`}
         >

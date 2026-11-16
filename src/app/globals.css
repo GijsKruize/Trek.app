@@ -5,12 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ------------------------------------------------------------------ */
-/* Trek? brand tokens — see docs/schema.md's sibling, the brandbook,  */
-/* for the source values. Proportion: 60 Bloem / 28 Aubergine /       */
-/* 10 Paprika / 2 Saffraan. Saffraan is a dot, never a theme — it is  */
-/* intentionally NOT wired into any generic interactive-state slot    */
-/* (accent/hover) below, only used explicitly where the brand calls   */
-/* for a highlight (e.g. a "match" moment).                           */
+/* Trek? brand tokens — see the brandbook (PDF) for the source values. */
+/* Proportion: 60 Bloem / 28 Aubergine / 10 Paprika / 2 Saffraan.      */
+/* Saffraan is a dot, never a theme — it is intentionally NOT wired    */
+/* into shadcn's generic `accent` slot below (that one stays a neutral*/
+/* surface tint, since Button/DropdownMenu/etc. lean on it everywhere */
+/* for hover states, and smearing Saffraan across all of those would  */
+/* turn the 2% dot into a theme). The brandbook's own "accent #FFC23D */
+/* (fill)" token lives separately as `--color-highlight` — reach for  */
+/* that, not `accent`, for an actual match/highlight moment.          */
 /* ------------------------------------------------------------------ */
 
 @theme inline {
@@ -62,6 +65,7 @@
   --color-surface-2: var(--surface-2);
   --color-brand-text: var(--brand-text);
   --color-on-primary: var(--on-primary);
+  --color-highlight: var(--highlight);
 
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
@@ -90,11 +94,14 @@
   --text-body--line-height: 1.375rem;
   --text-label: 1rem;
   --text-label--line-height: 1.25rem;
+  --text-label--font-weight: 700;
   --text-caption: 0.8125rem;
   --text-caption--line-height: 1.125rem;
+  --text-caption--font-weight: 500;
   --text-overline: 0.75rem;
   --text-overline--line-height: 1rem;
   --text-overline--letter-spacing: 0.08em;
+  --text-overline--font-weight: 700;
 }
 
 :root {
@@ -117,14 +124,23 @@
   --primary-foreground: var(--aubergine-900);
   --on-primary: var(--aubergine-900);
   --brand-text: var(--paprika-700);
-  --secondary: #f5eae8;
+  --highlight: var(--saffraan);
+  /* Theme-reactive wordmark colors — see TrekWordmark.tsx. The hook is
+     Paprika in both modes per the brandbook; only the dot (Paprika on
+     light, Saffraan on dark) and the small-size hook swap (Aubergine
+     below 40px on light, for contrast — Paprika-500 text/strokes on
+     Bloem are only 3.2:1) differ by theme. */
+  --wordmark-hook: var(--paprika-500);
+  --wordmark-hook-small: var(--aubergine-900);
+  --wordmark-dot: var(--paprika-500);
+  --secondary: #f5eadb;
   --secondary-foreground: var(--aubergine-900);
-  --surface-2: #f5eae8;
-  --muted: #f5eae8;
+  --surface-2: #f5eadb;
+  --muted: #f5eadb;
   --muted-foreground: #6e5c70;
-  --accent: #f5eae8;
+  --accent: #f5eadb;
   --accent-foreground: var(--aubergine-900);
-  --destructive: #cd264b;
+  --destructive: #c0264b;
   --destructive-foreground: #fce4ea;
   --border: #e6d8c8;
   --input: #e6d8c8;
@@ -132,9 +148,9 @@
 
   --success: #23774a;
   --success-foreground: #e2f2e8;
-  --warning: #ba5a00;
+  --warning: #8a5a00;
   --warning-foreground: #fff0cc;
-  --error: #cd264b;
+  --error: #c0264b;
   --error-foreground: #fce4ea;
   --info: #2557c9;
   --info-foreground: #e3ebfc;
@@ -161,6 +177,10 @@
   --primary-foreground: var(--aubergine-900);
   --on-primary: var(--aubergine-900);
   --brand-text: var(--paprika-300);
+  --highlight: var(--saffraan);
+  --wordmark-hook: var(--paprika-500);
+  --wordmark-hook-small: var(--paprika-500);
+  --wordmark-dot: var(--saffraan);
   --secondary: #46324e;
   --secondary-foreground: var(--bloem);
   --surface-2: #46324e;
@@ -170,18 +190,18 @@
   --accent-foreground: var(--bloem);
   --destructive: #ff8fa3;
   --destructive-foreground: #45202e;
-  --border: #4f3857;
-  --input: #4f3857;
+  --border: #4f3b57;
+  --input: #4f3b57;
   --ring: var(--paprika-500);
 
-  --success: #8fd9ae;
+  --success: #72d39c;
   --success-foreground: #1e3a2c;
   --warning: #f2c14e;
   --warning-foreground: #3d3016;
   --error: #ff8fa3;
   --error-foreground: #45202e;
-  --info: #9384ff;
-  --info-foreground: #1f2b40;
+  --info: #93b4ff;
+  --info-foreground: #1f2b4d;
 
   --sidebar: var(--card);
   --sidebar-foreground: var(--foreground);

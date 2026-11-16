@@ -74,7 +74,7 @@ export function RecipePicker({
                   )}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-label font-semibold">{recipe.title}</span>
+                  <span className="text-label">{recipe.title}</span>
                   {conflicts.length === 0 ? (
                     <span className="text-caption text-success">Geen conflicten</span>
                   ) : (

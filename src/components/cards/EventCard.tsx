@@ -24,7 +24,7 @@ export function EventCard({ upcoming }: { upcoming: UpcomingEvent }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="text-caption font-semibold uppercase tracking-wide text-brand-text">
+          <span className="text-overline uppercase text-brand-text">
             {dateFormatter.format(new Date(event.starts_at))}
           </span>
           <h3 className="flex items-center gap-1.5 text-title-3 font-heading font-bold">

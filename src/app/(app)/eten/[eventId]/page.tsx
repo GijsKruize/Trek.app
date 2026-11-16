@@ -71,7 +71,7 @@ export default async function EventDetailPage({
   return (
     <div className="flex flex-col gap-5 p-4">
       <div>
-        <p className="text-caption font-semibold uppercase tracking-wide text-brand-text">
+        <p className="text-overline uppercase text-brand-text">
           {dateFormatter.format(new Date(event.starts_at))}
         </p>
         <h1 className="text-title-1 font-heading font-extrabold">

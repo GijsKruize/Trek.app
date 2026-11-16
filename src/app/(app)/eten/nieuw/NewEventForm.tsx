@@ -134,7 +134,7 @@ export function NewEventForm({ groups }: { groups: Group[] }) {
       </div>
       <div className="flex items-center justify-between rounded-xl border border-border p-3">
         <div>
-          <p className="text-label font-semibold">Verrassing?</p>
+          <p className="text-label">Verrassing?</p>
           <p className="text-caption text-muted-foreground">
             Alleen jij en de kok zien het recept tot je het onthult.
           </p>

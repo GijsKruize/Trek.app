@@ -17,7 +17,7 @@ export function RsvpDeadlinePassed({ organizer }: { organizer: OrganizerContact 
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface-2 p-4">
-      <p className="inline-flex items-center gap-2 text-label font-semibold">
+      <p className="inline-flex items-center gap-2 text-label">
         <Lock className="h-4 w-4" strokeWidth={2.5} />
         RSVP&apos;s zijn gesloten
       </p>
@@ -30,7 +30,7 @@ export function RsvpDeadlinePassed({ organizer }: { organizer: OrganizerContact 
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-success text-success-foreground px-4 text-label font-semibold"
+          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-success text-success-foreground px-4 text-label"
         >
           <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
           App {organizer?.name}
@@ -38,7 +38,7 @@ export function RsvpDeadlinePassed({ organizer }: { organizer: OrganizerContact 
       ) : organizer?.email ? (
         <a
           href={`mailto:${organizer.email}`}
-          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-surface-2 border border-border px-4 text-label font-semibold"
+          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-surface-2 border border-border px-4 text-label"
         >
           <Mail className="h-4 w-4" strokeWidth={2.5} />
           Mail {organizer?.name}

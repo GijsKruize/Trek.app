@@ -16,7 +16,7 @@ export function CostSplitDisplay({
       <div className="flex items-center gap-2">
         <Receipt className="h-5 w-5 text-muted-foreground" />
         <div>
-          <p className="text-label font-semibold">{formatEuroCents(totalCostCents)} totaal</p>
+          <p className="text-label">{formatEuroCents(totalCostCents)} totaal</p>
           <p className="text-caption text-muted-foreground">
             Gedeeld door {yesCount} {yesCount === 1 ? "persoon" : "mensen"}
           </p>

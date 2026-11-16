@@ -30,7 +30,7 @@ export default async function SharedEventPage({
       <TrekWordmark width={140} className="mb-8" />
       <div className="flex w-full max-w-sm flex-col gap-5">
         <div>
-          <p className="text-caption font-semibold uppercase tracking-wide text-brand-text">
+          <p className="text-overline uppercase text-brand-text">
             {dateFormatter.format(new Date(payload.startsAt))}
           </p>
           <h1 className="text-title-1 font-heading font-extrabold">{payload.title}</h1>

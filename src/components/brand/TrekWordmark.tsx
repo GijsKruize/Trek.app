@@ -1,6 +1,6 @@
 import { TrekMark } from "./TrekMark";
 
-type TrekWordmarkVariant = "primary" | "reversed" | "mono";
+type TrekWordmarkVariant = "auto" | "primary" | "reversed" | "mono";
 
 interface TrekWordmarkProps {
   variant?: TrekWordmarkVariant;
@@ -14,14 +14,26 @@ interface TrekWordmarkProps {
  * never typeset in a font. The "?" is delegated to TrekMark so both
  * components share one source of truth for the question mark.
  *
+ * Default is "auto": letters use `--foreground` (Aubergine on light,
+ * Bloem on dark — the brandbook's primary/reversed pairing), so a caller
+ * on a page that follows the site theme gets the right variant for
+ * whichever background the current theme actually renders, instead of
+ * needing to track that itself. Pass "primary"/"reversed"/"mono"
+ * explicitly only on a fixed-color surface that doesn't track the page
+ * theme (e.g. the brandbook's Paprika-swatch "mono" icon use).
+ *
  * Deviation from the brandbook: these are geometric, monoline
  * interpretations of T-r-e-k, not a hand-tuned bespoke letterform set —
  * see HANDOVER.md. They satisfy "drawn, not typeset" but should be
  * refined by a designer before this ships for real.
  */
-export function TrekWordmark({ variant = "primary", width = 160, className }: TrekWordmarkProps) {
+export function TrekWordmark({ variant = "auto", width = 160, className }: TrekWordmarkProps) {
   const letterColor =
-    variant === "primary" ? "var(--aubergine-900)" : "var(--bloem)";
+    variant === "mono" || variant === "reversed"
+      ? "var(--bloem)"
+      : variant === "primary"
+        ? "var(--aubergine-900)"
+        : "var(--foreground)";
 
   return (
     <svg
@@ -64,9 +76,12 @@ function TrekMarkGlyph({ variant }: { variant: TrekWordmarkVariant }) {
   } else if (variant === "reversed") {
     hookColor = "var(--paprika-500)";
     dotColor = "var(--saffraan)";
-  } else {
+  } else if (variant === "primary") {
     hookColor = "var(--paprika-500)";
     dotColor = "var(--paprika-500)";
+  } else {
+    hookColor = "var(--wordmark-hook)";
+    dotColor = "var(--wordmark-dot)";
   }
 
   return (

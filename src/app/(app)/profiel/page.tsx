@@ -28,7 +28,7 @@ export default async function ProfielPage() {
         href="/profiel/dieetwensen"
         className="flex min-h-11 items-center justify-between rounded-2xl border border-border bg-card p-4"
       >
-        <span className="flex items-center gap-2 text-label font-semibold">
+        <span className="flex items-center gap-2 text-label">
           <Salad className="h-5 w-5" />
           Dieetwensen
         </span>
@@ -39,10 +39,10 @@ export default async function ProfielPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-title-3 font-heading font-bold">Jouw groepen</h2>
           <div className="flex items-center gap-3">
-            <Link href="/profiel/groepen/meedoen" className="text-caption font-semibold text-brand-text">
+            <Link href="/profiel/groepen/meedoen" className="text-caption text-brand-text">
               Code invoeren
             </Link>
-            <Link href="/profiel/groepen/nieuw" className="text-caption font-semibold text-brand-text inline-flex items-center gap-1">
+            <Link href="/profiel/groepen/nieuw" className="text-caption text-brand-text inline-flex items-center gap-1">
               <Plus className="h-3.5 w-3.5" />
               Nieuw
             </Link>
@@ -60,7 +60,7 @@ export default async function ProfielPage() {
                   href={`/profiel/groepen/${group.id}`}
                   className="flex min-h-11 items-center justify-between rounded-2xl border border-border bg-card p-4"
                 >
-                  <span className="flex items-center gap-2 text-label font-semibold">
+                  <span className="flex items-center gap-2 text-label">
                     <Users className="h-5 w-5" />
                     {group.name}
                   </span>

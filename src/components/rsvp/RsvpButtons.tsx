@@ -51,7 +51,7 @@ export function RsvpButtons({
         }}
         disabled={pending}
         className={cn(
-          "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label font-semibold transition-colors",
+          "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label transition-colors",
           status === "yes"
             ? "bg-success text-success-foreground"
             : "bg-surface-2 text-foreground hover:bg-border"
@@ -68,7 +68,7 @@ export function RsvpButtons({
         }}
         disabled={pending}
         className={cn(
-          "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label font-semibold transition-colors",
+          "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-label transition-colors",
           status === "no"
             ? "bg-error text-error-foreground"
             : "bg-surface-2 text-foreground hover:bg-border"
