@@ -6,15 +6,18 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { setRsvp, type RsvpStatus } from "@/lib/api/events";
 import { toast } from "sonner";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
 export function RsvpButtons({
   eventId,
   initialStatus,
   onChange,
+  locale = DEFAULT_LOCALE,
 }: {
   eventId: string;
   initialStatus: RsvpStatus;
   onChange?: (status: RsvpStatus) => void;
+  locale?: Locale;
 }) {
   const { user, pb } = useAuth();
   const [status, setStatus] = useState<RsvpStatus>(initialStatus);
@@ -31,7 +34,7 @@ export function RsvpButtons({
     } catch {
       setStatus(previous);
       onChange?.(previous);
-      toast.error("Geen verbinding. Probeer het nog eens.");
+      toast.error(t(locale, "common.networkError"));
     } finally {
       setPending(false);
     }
@@ -58,7 +61,7 @@ export function RsvpButtons({
         )}
       >
         <Check className="h-4 w-4" strokeWidth={2.5} />
-        Ik kom
+        {t(locale, "rsvp.yes")}
       </button>
       <button
         type="button"
@@ -75,7 +78,7 @@ export function RsvpButtons({
         )}
       >
         <X className="h-4 w-4" strokeWidth={2.5} />
-        Ik kom niet
+        {t(locale, "rsvp.no")}
       </button>
     </div>
   );

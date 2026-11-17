@@ -56,6 +56,7 @@ export interface TrekUser extends BaseRecord {
   phone: string;
   diet_tags: DietTag[];
   allergy_ingredients: string[];
+  birth_date: string;
 }
 
 export interface Group extends BaseRecord {
@@ -119,6 +120,7 @@ export interface Ad extends BaseRecord {
   starts_at: string;
   ends_at: string;
   sort_weight: number;
+  is_alcohol: boolean;
 }
 
 export interface EventSeries extends BaseRecord {
@@ -169,6 +171,10 @@ export interface ShoppingListItem extends BaseRecord {
   unit: Unit;
   checked: boolean;
   added_by: string;
+}
+
+export interface ShoppingListItemExpanded extends ShoppingListItem {
+  expand?: { ingredient?: Ingredient };
 }
 
 export interface Rsvp extends BaseRecord {

@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
 type DeadlineMode = "none" | "day_before" | "day_of";
 
@@ -32,7 +33,7 @@ function computeRsvpDeadline(startsAt: string, mode: DeadlineMode, time: string)
   return deadline.toISOString();
 }
 
-export function NewEventForm({ groups }: { groups: Group[] }) {
+export function NewEventForm({ groups, locale = DEFAULT_LOCALE }: { groups: Group[]; locale?: Locale }) {
   const { user, pb } = useAuth();
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -58,10 +59,10 @@ export function NewEventForm({ groups }: { groups: Group[] }) {
         groupId: groupId || undefined,
         rsvpDeadline: computeRsvpDeadline(startsAt, deadlineMode, deadlineTime),
       });
-      toast.success("Etentje aangemaakt.");
+      toast.success(t(locale, "eventForm.created"));
       router.push(`/eten/${event.id}`);
     } catch {
-      toast.error("Geen verbinding. Probeer het nog eens.");
+      toast.error(t(locale, "common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -70,17 +71,22 @@ export function NewEventForm({ groups }: { groups: Group[] }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="title">Titel (optioneel)</Label>
-        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Etentje" />
+        <Label htmlFor="title">{t(locale, "eventForm.titleLabel")}</Label>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t(locale, "eventForm.titlePlaceholder")}
+        />
       </div>
       <div className="flex flex-col gap-2">
-        <Label>Groep</Label>
+        <Label>{t(locale, "eventForm.group")}</Label>
         <Select value={groupId || "loose"} onValueChange={(v) => setGroupId(v === "loose" ? "" : v)}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Los etentje" />
+            <SelectValue placeholder={t(locale, "eventForm.looseEvent")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="loose">Los etentje (geen groep)</SelectItem>
+            <SelectItem value="loose">{t(locale, "eventForm.looseEvent")}</SelectItem>
             {groups.map((group) => (
               <SelectItem key={group.id} value={group.id}>
                 {group.name}
@@ -89,11 +95,11 @@ export function NewEventForm({ groups }: { groups: Group[] }) {
           </SelectContent>
         </Select>
         <p className="text-caption text-muted-foreground">
-          {groupId ? "Alle leden van deze groep zien dit etentje en kunnen reageren." : "Alleen mensen met de deelbare link kunnen reageren."}
+          {groupId ? t(locale, "eventForm.looseHelpGroup") : t(locale, "eventForm.looseHelpNoGroup")}
         </p>
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="startsAt">Datum &amp; tijd</Label>
+        <Label htmlFor="startsAt">{t(locale, "eventForm.dateTime")}</Label>
         <Input
           id="startsAt"
           type="datetime-local"
@@ -103,20 +109,20 @@ export function NewEventForm({ groups }: { groups: Group[] }) {
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="location">Locatie</Label>
+        <Label htmlFor="location">{t(locale, "eventForm.location")}</Label>
         <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} />
       </div>
       <div className="flex flex-col gap-2">
-        <Label>RSVP&apos;s sluiten</Label>
+        <Label>{t(locale, "eventForm.rsvpClose")}</Label>
         <div className="flex gap-2">
           <Select value={deadlineMode} onValueChange={(v) => setDeadlineMode(v as DeadlineMode)}>
             <SelectTrigger className="flex-1">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="day_of">Dag zelf</SelectItem>
-              <SelectItem value="day_before">Dag ervoor</SelectItem>
-              <SelectItem value="none">Nooit</SelectItem>
+              <SelectItem value="day_of">{t(locale, "eventForm.dayOf")}</SelectItem>
+              <SelectItem value="day_before">{t(locale, "eventForm.dayBefore")}</SelectItem>
+              <SelectItem value="none">{t(locale, "eventForm.never")}</SelectItem>
             </SelectContent>
           </Select>
           {deadlineMode !== "none" && (
@@ -128,25 +134,18 @@ export function NewEventForm({ groups }: { groups: Group[] }) {
             />
           )}
         </div>
-        <p className="text-caption text-muted-foreground">
-          Na dit tijdstip kan niemand meer reageren — ze krijgen de suggestie om jou rechtstreeks te appen.
-        </p>
+        <p className="text-caption text-muted-foreground">{t(locale, "eventForm.rsvpHelp")}</p>
       </div>
       <div className="flex items-center justify-between rounded-xl border border-border p-3">
         <div>
-          <p className="text-label">Verrassing?</p>
-          <p className="text-caption text-muted-foreground">
-            Alleen jij en de kok zien het recept tot je het onthult.
-          </p>
+          <p className="text-label">{t(locale, "eventForm.surprise")}</p>
+          <p className="text-caption text-muted-foreground">{t(locale, "eventForm.surpriseHelp")}</p>
         </div>
         <Switch checked={isSurprise} onCheckedChange={setIsSurprise} />
       </div>
-      <p className="text-caption text-muted-foreground">
-        Je kiest het recept straks, zodra je weet wie er komt — dan houden we meteen rekening met
-        hun dieetwensen en allergieën.
-      </p>
+      <p className="text-caption text-muted-foreground">{t(locale, "eventForm.recipeHint")}</p>
       <Button type="submit" size="lg" disabled={loading} className="mt-2">
-        {loading ? "Bezig..." : "Etentje aanmaken"}
+        {loading ? t(locale, "common.busy") : t(locale, "eventForm.submit")}
       </Button>
     </form>
   );

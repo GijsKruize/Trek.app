@@ -252,7 +252,7 @@ async function main() {
   // ---------------------------------------------------------------------
   // Ads
   // ---------------------------------------------------------------------
-  const adDefs: Array<{ title: string; teaser: string; link_url: string; sort_weight: number; image: string }> = [
+  const adDefs: Array<{ title: string; teaser: string; link_url: string; sort_weight: number; image: string; isAlcohol?: boolean }> = [
     {
       title: "Verse kaas van de boerderij",
       teaser: "10% korting voor studentenhuizen — vraag naar de Trek?-deal.",
@@ -288,6 +288,17 @@ async function main() {
       sort_weight: 12,
       image: "ad_nike.jpg",
     },
+    {
+      // Business plan §6.1 example brand; demonstrates alcohol-ad
+      // gating (§6.1/§10) — only shown to users who've confirmed 18+
+      // (see userDefs.birth_date above and src/lib/api/age.ts).
+      title: "Bavaria",
+      teaser: "Erbij bij elke jaarclubborrel. Alleen zichtbaar voor 18+.",
+      link_url: "https://example.com/bavaria",
+      sort_weight: 8,
+      image: "",
+      isAlcohol: true,
+    },
   ];
 
   for (const def of adDefs) {
@@ -297,19 +308,24 @@ async function main() {
       link_url: def.link_url,
       active: true,
       sort_weight: def.sort_weight,
+      is_alcohol: def.isAlcohol ?? false,
       ...(def.image ? { image: imageFile(def.image) } : {}),
     });
   }
-  console.log(`${adDefs.length} advertenties aangemaakt (3 met foto).`);
+  console.log(`${adDefs.length} advertenties aangemaakt (3 met foto, 1 alcoholgerelateerd).`);
 
   // ---------------------------------------------------------------------
   // Demo users
   // ---------------------------------------------------------------------
   const userDefs = [
-    { email: "sanne@trek.app", name: "Sanne", phone: "+31612345601", diet_tags: ["vegetarisch"], allergies: [] as string[] },
-    { email: "tom@trek.app", name: "Tom", phone: "+31612345602", diet_tags: [], allergies: ["Pinda's"] },
-    { email: "ahmed@trek.app", name: "Ahmed", phone: "+31612345603", diet_tags: ["halal"], allergies: [] },
-    { email: "femke@trek.app", name: "Femke", phone: "+31612345604", diet_tags: ["lactosevrij"], allergies: ["Amandelen"] },
+    // Sanne has a birth_date set — demonstrates alcohol-ad gating (§6.1/§10)
+    // actually letting an 18+-confirmed user see the one alcohol ad; the
+    // other three leave it unset, the realistic "not yet confirmed" default
+    // that keeps that ad hidden from them regardless of their real age.
+    { email: "sanne@trek.app", name: "Sanne", phone: "+31612345601", diet_tags: ["vegetarisch"], allergies: [] as string[], birth_date: "2003-04-12" },
+    { email: "tom@trek.app", name: "Tom", phone: "+31612345602", diet_tags: [], allergies: ["Pinda's"], birth_date: "" },
+    { email: "ahmed@trek.app", name: "Ahmed", phone: "+31612345603", diet_tags: ["halal"], allergies: [], birth_date: "" },
+    { email: "femke@trek.app", name: "Femke", phone: "+31612345604", diet_tags: ["lactosevrij"], allergies: ["Amandelen"], birth_date: "" },
   ];
   const DEMO_PASSWORD = "Wachtwoord123!";
 
@@ -323,6 +339,7 @@ async function main() {
       phone: def.phone,
       diet_tags: def.diet_tags,
       allergy_ingredients: def.allergies.map((name) => ingredientIds[name]),
+      ...(def.birth_date ? { birth_date: def.birth_date } : {}),
     });
     userIds[def.name] = user.id;
   }

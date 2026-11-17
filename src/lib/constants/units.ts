@@ -29,3 +29,18 @@ export const UNIT_LABELS: Record<Unit, string> = {
   blik: "blik",
   pak: "pak",
 };
+
+export const UNIT_LABELS_EN: Record<Unit, string> = {
+  gram: "g",
+  kilogram: "kg",
+  ml: "ml",
+  liter: "liter",
+  stuk: "pc",
+  el: "tbsp",
+  tl: "tsp",
+  snufje: "pinch",
+  teentje: "clove",
+  bosje: "bunch",
+  blik: "can",
+  pak: "pack",
+};

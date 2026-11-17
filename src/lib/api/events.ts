@@ -1,13 +1,16 @@
 import type PocketBase from "pocketbase";
 import { nanoid } from "nanoid";
 import type {
+  EventSeries,
   Group,
   GroupMember,
   Recipe,
+  RecipeIngredient,
   Rsvp,
-  ShoppingListItem,
+  ShoppingListItemExpanded,
   TrekEvent,
   TrekUser,
+  Weekday,
 } from "@/lib/pocketbase/types";
 
 interface EventExpanded extends TrekEvent {
@@ -45,7 +48,7 @@ export interface EventDetail {
   pendingMembers: TrekUser[];
   recipe: Recipe | null;
   revealed: boolean;
-  shoppingList: ShoppingListItem[];
+  shoppingList: ShoppingListItemExpanded[];
   myStatus: RsvpStatus;
   rsvpLocked: boolean;
 }
@@ -90,10 +93,12 @@ export async function getEventDetail(
     }
   }
 
-  let shoppingList: ShoppingListItem[] = [];
+  let shoppingList: ShoppingListItemExpanded[] = [];
   try {
-    shoppingList = await pb.collection("shopping_list_items").getFullList<ShoppingListItem>({
+    shoppingList = await pb.collection("shopping_list_items").getFullList<ShoppingListItemExpanded>({
       filter: `event = "${eventId}"`,
+      expand: "ingredient",
+      sort: "created",
     });
   } catch {
     shoppingList = [];
@@ -195,7 +200,10 @@ export async function createEvent(
 /** The recipe is deliberately not chosen at creation — the organizer
  * picks it once RSVPs (and therefore the real guest list's allergies)
  * are in, via `getRecipeOptions`. One event has at most one meal, so this
- * upserts rather than always creating. */
+ * upserts rather than always creating. Also generates the shared
+ * shopping list from the recipe's ingredients, scaled to the number of
+ * confirmed eaters (business plan 5.1: "a shared basket ... scaled to
+ * the number of eaters", instead of everyone typing it by hand). */
 export async function chooseRecipe(pb: PocketBase, eventId: string, recipeId: string): Promise<void> {
   try {
     const existing = await pb.collection("event_meals").getFirstListItem(`event = "${eventId}"`);
@@ -203,4 +211,82 @@ export async function chooseRecipe(pb: PocketBase, eventId: string, recipeId: st
   } catch {
     await pb.collection("event_meals").create({ event: eventId, recipe: recipeId });
   }
+  try {
+    await generateShoppingListFromRecipe(pb, eventId, recipeId);
+  } catch {
+    // Non-fatal: the recipe choice itself already succeeded. A group
+    // admin without organizer/cook rights on an older event may not have
+    // shopping_list_items write access yet (pre-migration-003 data) —
+    // the organizer/cook can still add items by hand either way.
+  }
+}
+
+/** Round a scaled quantity to something a shopping list is actually
+ * useful with: whole units for "stuk"/"teentje"/etc, one decimal for
+ * weights/volumes that are commonly fractional. */
+function roundScaledQuantity(quantity: number, unit: RecipeIngredient["unit"]): number {
+  const wholeUnits: RecipeIngredient["unit"][] = ["stuk", "teentje", "blik", "pak", "bosje"];
+  if (wholeUnits.includes(unit)) return Math.max(1, Math.round(quantity));
+  return Math.round(quantity * 10) / 10;
+}
+
+async function generateShoppingListFromRecipe(pb: PocketBase, eventId: string, recipeId: string): Promise<void> {
+  const [recipe, yesRsvps, existingItems, recipeIngredients] = await Promise.all([
+    pb.collection("recipes").getOne<Recipe>(recipeId),
+    pb.collection("rsvps").getFullList<Rsvp>({ filter: `event = "${eventId}" && status = "yes"` }),
+    pb.collection("shopping_list_items").getFullList({ filter: `event = "${eventId}" && ingredient != ""` }),
+    pb.collection("recipe_ingredients").getFullList<RecipeIngredient>({ filter: `recipe = "${recipeId}"` }),
+  ]);
+
+  const eaters = yesRsvps.length > 0 ? yesRsvps.length : recipe.servings || 1;
+  const scale = recipe.servings > 0 ? eaters / recipe.servings : 1;
+
+  const alreadyListed = new Set((existingItems as { ingredient?: string }[]).map((i) => i.ingredient));
+  const toCreate = recipeIngredients.filter((ri) => !alreadyListed.has(ri.ingredient));
+
+  await Promise.all(
+    toCreate.map((ri) =>
+      pb.collection("shopping_list_items").create({
+        event: eventId,
+        ingredient: ri.ingredient,
+        quantity: roundScaledQuantity(ri.quantity * scale, ri.unit),
+        unit: ri.unit,
+        checked: false,
+      })
+    )
+  );
+}
+
+export async function createEventSeries(
+  pb: PocketBase,
+  data: {
+    organizer: string;
+    title: string;
+    groupId?: string;
+    rruleFreq: "weekly" | "biweekly" | "monthly";
+    rruleByweekday: Weekday;
+    startTime: string;
+    startDate: string;
+    endDate?: string;
+    cookRotationEnabled: boolean;
+    cookRotationOrder: string[];
+    surpriseDefault: boolean;
+    defaultLocation?: string;
+  }
+): Promise<EventSeries> {
+  return pb.collection("event_series").create<EventSeries>({
+    organizer: data.organizer,
+    group: data.groupId ?? "",
+    title: data.title,
+    rrule_freq: data.rruleFreq,
+    rrule_byweekday: data.rruleByweekday,
+    start_time: data.startTime,
+    start_date: data.startDate,
+    end_date: data.endDate ?? "",
+    cook_rotation_enabled: data.cookRotationEnabled,
+    cook_rotation_order: data.cookRotationOrder,
+    surprise_default: data.surpriseDefault,
+    default_location: data.defaultLocation ?? "",
+    active: true,
+  });
 }

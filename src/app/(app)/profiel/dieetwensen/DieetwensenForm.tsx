@@ -4,11 +4,20 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import type { Ingredient, TrekUser, DietTag } from "@/lib/pocketbase/types";
-import { DIET_TAGS, DIET_TAG_LABELS } from "@/lib/constants/dietTags";
+import { DIET_TAGS, getDietTagLabel } from "@/lib/constants/dietTags";
 import { DietTagChip } from "@/components/badges/DietTagChip";
 import { Button } from "@/components/ui/button";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
-export function DieetwensenForm({ user, ingredients }: { user: TrekUser; ingredients: Ingredient[] }) {
+export function DieetwensenForm({
+  user,
+  ingredients,
+  locale = DEFAULT_LOCALE,
+}: {
+  user: TrekUser;
+  ingredients: Ingredient[];
+  locale?: Locale;
+}) {
   const { pb } = useAuth();
   const [dietTags, setDietTags] = useState<DietTag[]>(user.diet_tags ?? []);
   const [allergyIds, setAllergyIds] = useState<string[]>(user.allergy_ingredients ?? []);
@@ -29,9 +38,9 @@ export function DieetwensenForm({ user, ingredients }: { user: TrekUser; ingredi
         diet_tags: dietTags,
         allergy_ingredients: allergyIds,
       });
-      toast.success("Dieetwensen opgeslagen.");
+      toast.success(t(locale, "diet.saved"));
     } catch {
-      toast.error("Geen verbinding. Probeer het nog eens.");
+      toast.error(t(locale, "common.networkError"));
     } finally {
       setSaving(false);
     }
@@ -40,12 +49,12 @@ export function DieetwensenForm({ user, ingredients }: { user: TrekUser; ingredi
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h2 className="text-title-3 font-heading font-bold">Diät</h2>
+        <h2 className="text-title-3 font-heading font-bold">{t(locale, "diet.title")}</h2>
         <div className="flex flex-wrap gap-2">
           {DIET_TAGS.map((tag) => (
             <DietTagChip
               key={tag}
-              label={DIET_TAG_LABELS[tag]}
+              label={getDietTagLabel(tag, locale)}
               selected={dietTags.includes(tag)}
               onClick={() => toggleDiet(tag)}
             />
@@ -54,8 +63,8 @@ export function DieetwensenForm({ user, ingredients }: { user: TrekUser; ingredi
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-title-3 font-heading font-bold">Allergieën</h2>
-        <p className="text-caption text-muted-foreground">Kies specifieke ingrediënten om voor te waarschuwen.</p>
+        <h2 className="text-title-3 font-heading font-bold">{t(locale, "diet.allergiesTitle")}</h2>
+        <p className="text-caption text-muted-foreground">{t(locale, "diet.allergiesHelp")}</p>
         <div className="flex flex-wrap gap-2">
           {ingredients.map((ingredient) => (
             <DietTagChip
@@ -69,7 +78,7 @@ export function DieetwensenForm({ user, ingredients }: { user: TrekUser; ingredi
       </div>
 
       <Button onClick={handleSave} disabled={saving} size="lg">
-        {saving ? "Bezig..." : "Opslaan"}
+        {saving ? t(locale, "common.busy") : t(locale, "common.save")}
       </Button>
     </div>
   );

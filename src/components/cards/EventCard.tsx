@@ -2,18 +2,18 @@ import Link from "next/link";
 import { MapPin, Users, EyeOff } from "lucide-react";
 import type { UpcomingEvent } from "@/lib/api/events";
 import { RsvpStatusBadge } from "@/components/badges/RsvpStatusBadge";
+import { t, dateLocaleTag, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-export function EventCard({ upcoming }: { upcoming: UpcomingEvent }) {
+export function EventCard({ upcoming, locale = DEFAULT_LOCALE }: { upcoming: UpcomingEvent; locale?: Locale }) {
   const { event, myStatus } = upcoming;
-  const title = event.is_surprise && !event.revealed_at ? "Verrassingsetentje" : event.title || "Etentje";
+  const dateFormatter = new Intl.DateTimeFormat(dateLocaleTag(locale), {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const title = event.is_surprise && !event.revealed_at ? t(locale, "eten.surpriseMeal") : event.title || t(locale, "eten.meal");
   const groupName = event.expand?.group?.name;
   const organizerName = event.expand?.organizer?.name;
 
@@ -32,7 +32,7 @@ export function EventCard({ upcoming }: { upcoming: UpcomingEvent }) {
             {title}
           </h3>
         </div>
-        <RsvpStatusBadge status={myStatus} />
+        <RsvpStatusBadge status={myStatus} locale={locale} />
       </div>
       <div className="flex flex-wrap gap-3 text-caption text-muted-foreground">
         {groupName ? (

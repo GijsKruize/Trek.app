@@ -3,11 +3,12 @@ import { Megaphone } from "lucide-react";
 import type { Ad } from "@/lib/pocketbase/types";
 import { fileUrl } from "@/lib/pocketbase/client";
 import { SponsoredBadge } from "@/components/badges/SponsoredBadge";
+import type { Locale } from "@/lib/i18n/translations";
 
 /** Sponsored cards are visually distinct from recipe cards: a Blauwbes
  * border/accent and an explicit "Gesponsord" label — never mistaken for
  * the brand or a group match. */
-export function AdCard({ ad }: { ad: Ad }) {
+export function AdCard({ ad, locale }: { ad: Ad; locale: Locale }) {
   const imageUrl = fileUrl(ad, ad.image, "ads");
 
   return (
@@ -26,7 +27,7 @@ export function AdCard({ ad }: { ad: Ad }) {
           </div>
         )}
         <div className="absolute left-3 top-3">
-          <SponsoredBadge />
+          <SponsoredBadge locale={locale} />
         </div>
       </div>
       <div className="flex flex-col gap-1 p-4">

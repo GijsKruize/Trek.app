@@ -6,6 +6,8 @@ import { getServerPocketBase, getCurrentUser } from "@/lib/pocketbase/server";
 import { getEventDetail } from "@/lib/api/events";
 import { getRecipeOptions } from "@/lib/api/recipes";
 import { fileUrl } from "@/lib/pocketbase/client";
+import { getLocale } from "@/lib/i18n/server";
+import { t, dateLocaleTag } from "@/lib/i18n/translations";
 import { RsvpButtons } from "@/components/rsvp/RsvpButtons";
 import { RsvpDeadlinePassed } from "@/components/rsvp/RsvpDeadlinePassed";
 import { RsvpStatusBadge } from "@/components/badges/RsvpStatusBadge";
@@ -17,14 +19,6 @@ import { ShareLinkManager } from "@/components/events/ShareLinkManager";
 import type { RsvpStatus } from "@/lib/api/events";
 import type { TrekUser } from "@/lib/pocketbase/types";
 
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 export default async function EventDetailPage({
   params,
 }: {
@@ -33,6 +27,15 @@ export default async function EventDetailPage({
   const { eventId } = await params;
   const pb = await getServerPocketBase();
   const user = await getCurrentUser();
+  const locale = await getLocale();
+
+  const dateFormatter = new Intl.DateTimeFormat(dateLocaleTag(locale), {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   let detail;
   try {
@@ -65,7 +68,7 @@ export default async function EventDetailPage({
     const knownUsers = attendees.map((a) => a.expand?.user).filter((u): u is TrekUser => !!u);
     const candidateAttendees = yesUsers.length > 0 ? yesUsers : knownUsers.length > 0 ? knownUsers : pendingMembers;
     recipeAttendeeCount = yesUsers.length;
-    recipeOptions = await getRecipeOptions(pb, candidateAttendees);
+    recipeOptions = await getRecipeOptions(pb, candidateAttendees, locale);
   }
 
   return (
@@ -75,7 +78,8 @@ export default async function EventDetailPage({
           {dateFormatter.format(new Date(event.starts_at))}
         </p>
         <h1 className="text-title-1 font-heading font-extrabold">
-          {event.title || (revealed && recipe ? recipe.title : event.is_surprise ? "Verrassingsetentje" : "Etentje")}
+          {event.title ||
+            (revealed && recipe ? recipe.title : event.is_surprise ? t(locale, "eten.surpriseMeal") : t(locale, "eten.meal"))}
         </h1>
         <div className="mt-2 flex flex-wrap gap-3 text-caption text-muted-foreground">
           {event.expand?.group?.name && (
@@ -93,7 +97,7 @@ export default async function EventDetailPage({
           {event.expand?.cook?.name && (
             <span className="inline-flex items-center gap-1">
               <ChefHat className="h-3.5 w-3.5" />
-              {event.expand.cook.name} kookt
+              {t(locale, "eten.cooking", { name: event.expand.cook.name })}
             </span>
           )}
         </div>
@@ -101,15 +105,15 @@ export default async function EventDetailPage({
 
       {user &&
         (rsvpLocked ? (
-          <RsvpDeadlinePassed organizer={event.expand?.organizer} />
+          <RsvpDeadlinePassed organizer={event.expand?.organizer} locale={locale} />
         ) : (
-          <RsvpButtons eventId={event.id} initialStatus={myStatus} />
+          <RsvpButtons eventId={event.id} initialStatus={myStatus} locale={locale} />
         ))}
 
       {!recipe && canManage ? (
-        <RecipePicker eventId={event.id} options={recipeOptions} attendeeCount={recipeAttendeeCount} />
+        <RecipePicker eventId={event.id} options={recipeOptions} attendeeCount={recipeAttendeeCount} locale={locale} />
       ) : event.is_surprise && !revealed ? (
-        <SurpriseGate eventId={event.id} canReveal={canManage || isCook} isCook={isCook} />
+        <SurpriseGate eventId={event.id} canReveal={canManage || isCook} isCook={isCook} locale={locale} />
       ) : recipe ? (
         <Link
           href={`/recepten/${recipe.id}`}
@@ -124,30 +128,30 @@ export default async function EventDetailPage({
           {recipe.description && <p className="text-body text-muted-foreground">{recipe.description}</p>}
         </Link>
       ) : (
-        <p className="text-body text-muted-foreground">Nog geen recept gekozen.</p>
+        <p className="text-body text-muted-foreground">{t(locale, "eten.noRecipeChosen")}</p>
       )}
 
-      <CostSplitDisplay totalCostCents={event.total_cost_cents} yesCount={yesCount} />
+      <CostSplitDisplay totalCostCents={event.total_cost_cents} yesCount={yesCount} locale={locale} />
 
       <div className="flex flex-col gap-2">
         <h2 className="text-title-3 font-heading font-bold">
-          Wie komt er? <span className="text-muted-foreground font-sans font-normal">({yesCount})</span>
+          {t(locale, "eten.whoComes")} <span className="text-muted-foreground font-sans font-normal">({yesCount})</span>
         </h2>
         <ul className="flex flex-col gap-1">
           {attendees.length === 0 && pendingMembers.length === 0 ? (
-            <p className="text-body text-muted-foreground">Nog niemand heeft gereageerd.</p>
+            <p className="text-body text-muted-foreground">{t(locale, "eten.noResponses")}</p>
           ) : (
             <>
               {attendees.map((a) => (
                 <li key={a.id} className="flex items-center justify-between py-1">
-                  <span className="text-body">{a.expand?.user?.name || a.guest_name || "Gast"}</span>
-                  <RsvpStatusBadge status={a.status as RsvpStatus} />
+                  <span className="text-body">{a.expand?.user?.name || a.guest_name || t(locale, "eten.guestFallback")}</span>
+                  <RsvpStatusBadge status={a.status as RsvpStatus} locale={locale} />
                 </li>
               ))}
               {pendingMembers.map((member) => (
                 <li key={member.id} className="flex items-center justify-between py-1">
                   <span className="text-body">{member.name}</span>
-                  <RsvpStatusBadge status="pending" />
+                  <RsvpStatusBadge status="pending" locale={locale} />
                 </li>
               ))}
             </>
@@ -155,12 +159,14 @@ export default async function EventDetailPage({
         </ul>
       </div>
 
-      {(revealed || isCook || isOrganizer) && <ShoppingList eventId={event.id} items={shoppingList} canEdit={!!user} />}
+      {(revealed || isCook || isOrganizer) && (
+        <ShoppingList eventId={event.id} items={shoppingList} canEdit={!!user} locale={locale} />
+      )}
 
       {canManage && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-title-3 font-heading font-bold">Delen</h2>
-          <ShareLinkManager eventId={event.id} shareToken={event.share_token} />
+          <h2 className="text-title-3 font-heading font-bold">{t(locale, "eten.share")}</h2>
+          <ShareLinkManager eventId={event.id} shareToken={event.share_token} locale={locale} />
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const AUTH_COOKIE_NAME = "trek_pb_auth";
-const PUBLIC_APP_PATHS = ["/login", "/register"];
+const PUBLIC_APP_PATHS = ["/login", "/register", "/privacy"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

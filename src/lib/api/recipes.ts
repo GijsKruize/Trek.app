@@ -1,20 +1,23 @@
 import type PocketBase from "pocketbase";
 import type { Ad, Recipe, RecipeIngredientExpanded, RecipeWithWarnings, TrekUser } from "@/lib/pocketbase/types";
 import { computeAttendeeWarnings, computeDietWarnings } from "./diet";
+import { isConfirmedAdult } from "./age";
 import { AD_INTERVAL } from "@/lib/constants/feed";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
 export type FeedItem = { type: "recipe"; recipe: RecipeWithWarnings } | { type: "ad"; ad: Ad };
 
 async function withDietWarnings(
   pb: PocketBase,
   recipe: Recipe,
-  user: TrekUser | null
+  user: TrekUser | null,
+  locale: Locale
 ): Promise<RecipeWithWarnings> {
   const ingredients = await pb.collection("recipe_ingredients").getFullList<RecipeIngredientExpanded>({
     filter: `recipe = "${recipe.id}"`,
     expand: "ingredient",
   });
-  return { ...recipe, dietWarnings: computeDietWarnings(ingredients, user) };
+  return { ...recipe, dietWarnings: computeDietWarnings(ingredients, user, locale) };
 }
 
 /** Fisher-Yates — the feed should feel different on every load, not stale
@@ -28,13 +31,25 @@ function shuffle<T>(items: T[]): T[] {
   return shuffled;
 }
 
-export async function getFeed(pb: PocketBase, user: TrekUser | null): Promise<FeedItem[]> {
-  const [recipes, ads] = await Promise.all([
+export async function getFeed(
+  pb: PocketBase,
+  user: TrekUser | null,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<FeedItem[]> {
+  const [recipes, allAds] = await Promise.all([
     pb.collection("recipes").getFullList<Recipe>(),
     pb.collection("ads").getFullList<Ad>({ sort: "-sort_weight" }),
   ]);
 
-  const recipesWithWarnings = await Promise.all(shuffle(recipes).map((recipe) => withDietWarnings(pb, recipe, user)));
+  // Business plan §6.1/§10 "Responsible advertising": alcohol placements
+  // only go to users who've confirmed they're 18+ — everyone else simply
+  // never sees them, rather than a blurred/gated placeholder.
+  const isAdult = isConfirmedAdult(user);
+  const ads = allAds.filter((ad) => !ad.is_alcohol || isAdult);
+
+  const recipesWithWarnings = await Promise.all(
+    shuffle(recipes).map((recipe) => withDietWarnings(pb, recipe, user, locale))
+  );
 
   const items: FeedItem[] = [];
   let adIndex = 0;
@@ -49,7 +64,12 @@ export async function getFeed(pb: PocketBase, user: TrekUser | null): Promise<Fe
   return items;
 }
 
-export async function getRecipeDetail(pb: PocketBase, id: string, user: TrekUser | null) {
+export async function getRecipeDetail(
+  pb: PocketBase,
+  id: string,
+  user: TrekUser | null,
+  locale: Locale = DEFAULT_LOCALE
+) {
   const recipe = await pb.collection("recipes").getOne<Recipe>(id);
   const ingredients = await pb.collection("recipe_ingredients").getFullList<RecipeIngredientExpanded>({
     filter: `recipe = "${id}"`,
@@ -57,7 +77,7 @@ export async function getRecipeDetail(pb: PocketBase, id: string, user: TrekUser
     sort: "sort_order",
   });
   return {
-    recipe: { ...recipe, dietWarnings: computeDietWarnings(ingredients, user) } as RecipeWithWarnings,
+    recipe: { ...recipe, dietWarnings: computeDietWarnings(ingredients, user, locale) } as RecipeWithWarnings,
     ingredients,
   };
 }
@@ -73,7 +93,8 @@ export interface RecipeOption {
  * time. Sorted conflict-free first, then by fewest affected attendees. */
 export async function getRecipeOptions(
   pb: PocketBase,
-  attendees: Pick<TrekUser, "id" | "name" | "diet_tags" | "allergy_ingredients">[]
+  attendees: Pick<TrekUser, "id" | "name" | "diet_tags" | "allergy_ingredients">[],
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<RecipeOption[]> {
   const recipes = await pb.collection("recipes").getFullList<Recipe>({ sort: "title" });
   const options = await Promise.all(
@@ -82,7 +103,7 @@ export async function getRecipeOptions(
         filter: `recipe = "${recipe.id}"`,
         expand: "ingredient",
       });
-      return { recipe, conflicts: computeAttendeeWarnings(ingredients, attendees) };
+      return { recipe, conflicts: computeAttendeeWarnings(ingredients, attendees, locale) };
     })
   );
   return options.sort((a, b) => a.conflicts.length - b.conflicts.length);

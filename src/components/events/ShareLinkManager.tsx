@@ -7,8 +7,17 @@ import { Link2, Link2Off, Copy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { enableShareLink, revokeShareLink } from "@/lib/api/events";
 import { Button } from "@/components/ui/button";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
-export function ShareLinkManager({ eventId, shareToken }: { eventId: string; shareToken: string }) {
+export function ShareLinkManager({
+  eventId,
+  shareToken,
+  locale = DEFAULT_LOCALE,
+}: {
+  eventId: string;
+  shareToken: string;
+  locale?: Locale;
+}) {
   const { pb } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -21,7 +30,7 @@ export function ShareLinkManager({ eventId, shareToken }: { eventId: string; sha
       await enableShareLink(pb, eventId);
       router.refresh();
     } catch {
-      toast.error("Geen verbinding. Probeer het nog eens.");
+      toast.error(t(locale, "common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -33,7 +42,7 @@ export function ShareLinkManager({ eventId, shareToken }: { eventId: string; sha
       await revokeShareLink(pb, eventId);
       router.refresh();
     } catch {
-      toast.error("Geen verbinding. Probeer het nog eens.");
+      toast.error(t(locale, "common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -42,36 +51,34 @@ export function ShareLinkManager({ eventId, shareToken }: { eventId: string; sha
   async function copyLink() {
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl);
-    toast.success("Link gekopieerd.");
+    toast.success(t(locale, "shareLink.copied"));
   }
 
   if (!shareToken) {
     return (
       <Button variant="outline" onClick={handleEnable} disabled={loading} className="w-full">
         <Link2 className="h-4 w-4" />
-        Deel-link aanmaken
+        {t(locale, "shareLink.create")}
       </Button>
     );
   }
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
-      <p className="text-caption text-muted-foreground">
-        Iedereen met deze link kan reageren zonder account.
-      </p>
+      <p className="text-caption text-muted-foreground">{t(locale, "shareLink.help")}</p>
       <div className="flex gap-2">
         <input
           readOnly
           value={shareUrl}
           className="flex-1 rounded-lg bg-surface-2 px-3 py-2 text-caption text-muted-foreground"
         />
-        <Button variant="outline" size="icon" onClick={copyLink} aria-label="Kopiëren">
+        <Button variant="outline" size="icon" onClick={copyLink} aria-label={t(locale, "shareLink.copyAria")}>
           <Copy className="h-4 w-4" />
         </Button>
       </div>
       <Button variant="ghost" size="sm" onClick={handleRevoke} disabled={loading} className="self-start text-error">
         <Link2Off className="h-4 w-4" />
-        Link intrekken
+        {t(locale, "shareLink.revoke")}
       </Button>
     </div>
   );

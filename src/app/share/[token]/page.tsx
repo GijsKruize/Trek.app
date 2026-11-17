@@ -4,15 +4,9 @@ import { MapPin, EyeOff, Users } from "lucide-react";
 import { TrekWordmark } from "@/components/brand/TrekWordmark";
 import { fetchSharedEvent, sharedRecipeImageUrl } from "@/lib/api/share";
 import { RsvpDeadlinePassed } from "@/components/rsvp/RsvpDeadlinePassed";
+import { getLocale } from "@/lib/i18n/server";
+import { t, dateLocaleTag } from "@/lib/i18n/translations";
 import { GuestRsvpForm } from "./GuestRsvpForm";
-
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
 export default async function SharedEventPage({
   params,
@@ -22,6 +16,15 @@ export default async function SharedEventPage({
   const { token } = await params;
   const payload = await fetchSharedEvent(token);
   if (!payload) notFound();
+
+  const locale = await getLocale();
+  const dateFormatter = new Intl.DateTimeFormat(dateLocaleTag(locale), {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const imageUrl = payload.recipe ? sharedRecipeImageUrl(payload.recipe.recipeId, payload.recipe.image) : "";
 
@@ -53,9 +56,7 @@ export default async function SharedEventPage({
         {payload.isSurprise && !payload.revealed ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface-2 p-6 text-center">
             <EyeOff className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
-            <p className="text-body text-muted-foreground">
-              Verrassing. Het recept wordt onthuld zodra de organisator dat doet.
-            </p>
+            <p className="text-body text-muted-foreground">{t(locale, "surprise.shareHidden")}</p>
           </div>
         ) : payload.recipe ? (
           <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
@@ -72,15 +73,16 @@ export default async function SharedEventPage({
         ) : null}
 
         <p className="text-body text-muted-foreground">
-          {payload.rsvpSummary.yes} {payload.rsvpSummary.yes === 1 ? "persoon komt" : "mensen komen"}.
+          {payload.rsvpSummary.yes} {t(locale, payload.rsvpSummary.yes === 1 ? "share.personComes" : "share.peopleCome")}.
         </p>
 
         {payload.rsvpLocked ? (
           <RsvpDeadlinePassed
             organizer={{ name: payload.organizerName, phone: payload.organizerPhone, email: payload.organizerEmail }}
+            locale={locale}
           />
         ) : (
-          <GuestRsvpForm token={token} />
+          <GuestRsvpForm token={token} locale={locale} />
         )}
       </div>
     </div>

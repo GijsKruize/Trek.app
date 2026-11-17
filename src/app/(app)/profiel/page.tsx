@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Users, Salad, ChevronRight, Plus } from "lucide-react";
 import { getServerPocketBase, getCurrentUser } from "@/lib/pocketbase/server";
 import { getMyGroups } from "@/lib/api/groups";
+import { getLocale } from "@/lib/i18n/server";
+import { t } from "@/lib/i18n/translations";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { LogoutButton } from "./LogoutButton";
 import { PhoneForm } from "./PhoneForm";
 
@@ -10,6 +13,7 @@ export default async function ProfielPage() {
   if (!user) return null;
 
   const pb = await getServerPocketBase();
+  const locale = await getLocale();
   const groups = await getMyGroups(pb, user.id);
 
   return (
@@ -19,10 +23,12 @@ export default async function ProfielPage() {
           <h1 className="text-title-1 font-heading font-extrabold">{user.name}</h1>
           <p className="text-body text-muted-foreground">{user.email}</p>
         </div>
-        <LogoutButton />
+        <LogoutButton locale={locale} />
       </div>
 
-      <PhoneForm user={user} />
+      <PhoneForm user={user} locale={locale} />
+
+      <LocaleSwitcher locale={locale} />
 
       <Link
         href="/profiel/dieetwensen"
@@ -30,28 +36,26 @@ export default async function ProfielPage() {
       >
         <span className="flex items-center gap-2 text-label">
           <Salad className="h-5 w-5" />
-          Dieetwensen
+          {t(locale, "dieetwensen.title")}
         </span>
         <ChevronRight className="h-5 w-5 text-muted-foreground" />
       </Link>
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-title-3 font-heading font-bold">Jouw groepen</h2>
+          <h2 className="text-title-3 font-heading font-bold">{t(locale, "groups.myGroups")}</h2>
           <div className="flex items-center gap-3">
             <Link href="/profiel/groepen/meedoen" className="text-caption text-brand-text">
-              Code invoeren
+              {t(locale, "groups.enterCode")}
             </Link>
             <Link href="/profiel/groepen/nieuw" className="text-caption text-brand-text inline-flex items-center gap-1">
               <Plus className="h-3.5 w-3.5" />
-              Nieuw
+              {t(locale, "common.new")}
             </Link>
           </div>
         </div>
         {groups.length === 0 ? (
-          <p className="text-body text-muted-foreground">
-            Nog geen groepen. Maak er een, of vraag een huisgenoot om een uitnodiging.
-          </p>
+          <p className="text-body text-muted-foreground">{t(locale, "groups.empty")}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {groups.map(({ group, role }) => (
@@ -65,7 +69,7 @@ export default async function ProfielPage() {
                     {group.name}
                   </span>
                   <span className="flex items-center gap-2 text-caption text-muted-foreground">
-                    {role === "admin" && "beheerder"}
+                    {role === "admin" && t(locale, "groups.admin")}
                     <ChevronRight className="h-5 w-5" />
                   </span>
                 </Link>
@@ -74,6 +78,10 @@ export default async function ProfielPage() {
           </ul>
         )}
       </div>
+
+      <Link href="/privacy" className="text-center text-caption text-muted-foreground">
+        {t(locale, "privacy.linkLabel")}
+      </Link>
     </div>
   );
 }

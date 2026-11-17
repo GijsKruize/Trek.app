@@ -1,4 +1,5 @@
 import type { DietTag, IngredientTag } from "@/lib/pocketbase/types";
+import type { Locale } from "@/lib/i18n/translations";
 
 export const DIET_TAGS: DietTag[] = [
   "vegetarisch",
@@ -19,6 +20,20 @@ export const DIET_TAG_LABELS: Record<DietTag, string> = {
   kosjer: "Koosjer",
   pescotarisch: "Pescotarisch",
 };
+
+export const DIET_TAG_LABELS_EN: Record<DietTag, string> = {
+  vegetarisch: "Vegetarian",
+  vegan: "Vegan",
+  glutenvrij: "Gluten-free",
+  lactosevrij: "Lactose-free",
+  halal: "Halal",
+  kosjer: "Kosher",
+  pescotarisch: "Pescatarian",
+};
+
+export function getDietTagLabel(tag: DietTag, locale: Locale): string {
+  return locale === "en" ? DIET_TAG_LABELS_EN[tag] : DIET_TAG_LABELS[tag];
+}
 
 /** Which ingredient tags a diet wish excludes. This is a product
  * decision, not content, so it lives in code rather than a PocketBase

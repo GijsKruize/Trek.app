@@ -1,10 +1,12 @@
 import { Suspense } from "react";
+import { getLocale } from "@/lib/i18n/server";
 import { LoginForm } from "./LoginForm";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const locale = await getLocale();
   return (
     <Suspense>
-      <LoginForm />
+      <LoginForm locale={locale} />
     </Suspense>
   );
 }

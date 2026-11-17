@@ -4,8 +4,9 @@ import { ChefHat } from "lucide-react";
 import type { RecipeWithWarnings } from "@/lib/pocketbase/types";
 import { fileUrl } from "@/lib/pocketbase/client";
 import { WarningBadgeList } from "@/components/badges/WarningBadge";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
-export function RecipeCard({ recipe }: { recipe: RecipeWithWarnings }) {
+export function RecipeCard({ recipe, locale = DEFAULT_LOCALE }: { recipe: RecipeWithWarnings; locale?: Locale }) {
   const imageUrl = fileUrl(recipe, recipe.image, "recipes");
 
   return (
@@ -27,8 +28,8 @@ export function RecipeCard({ recipe }: { recipe: RecipeWithWarnings }) {
           <p className="text-body text-muted-foreground line-clamp-2">{recipe.description}</p>
         )}
         <div className="flex items-center gap-3 text-caption text-muted-foreground">
-          <span>{recipe.servings} personen</span>
-          {recipe.prep_minutes > 0 && <span>· {recipe.prep_minutes} min</span>}
+          <span>{t(locale, "recipe.servings", { count: recipe.servings })}</span>
+          {recipe.prep_minutes > 0 && <span>· {t(locale, "recipe.minutes", { count: recipe.prep_minutes })}</span>}
         </div>
         <WarningBadgeList warnings={recipe.dietWarnings} />
       </div>

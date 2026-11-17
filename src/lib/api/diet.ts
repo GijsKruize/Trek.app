@@ -1,14 +1,19 @@
 import type { DietWarning, IngredientTag, RecipeIngredientExpanded, TrekUser } from "@/lib/pocketbase/types";
 import { DIET_EXCLUDES_INGREDIENT_TAGS } from "@/lib/constants/dietTags";
-import { INGREDIENT_TAG_LABELS } from "@/lib/constants/ingredientTags";
+import { getIngredientTagLabel } from "@/lib/constants/ingredientTags";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
 /** The single implementation of "does this recipe conflict with this
  * user's dietary wishes/allergies" — badges stay purely presentational
  * and just render whatever this returns. Run server-side in lib/api so
- * there's exactly one place this rule lives. */
+ * there's exactly one place this rule lives. The ingredient/allergen
+ * names themselves stay in their original (seeded) language — only the
+ * "contains ..." wrapper phrase and the fixed ingredient-tag labels are
+ * localized, since the ingredient names are content, not UI chrome. */
 export function computeDietWarnings(
   recipeIngredients: RecipeIngredientExpanded[],
-  user: Pick<TrekUser, "diet_tags" | "allergy_ingredients"> | null
+  user: Pick<TrekUser, "diet_tags" | "allergy_ingredients"> | null,
+  locale: Locale = DEFAULT_LOCALE
 ): DietWarning[] {
   if (!user) return [];
 
@@ -26,7 +31,7 @@ export function computeDietWarnings(
     for (const tag of ri.expand?.ingredient?.tags ?? []) {
       if (excludedTags.has(tag) && !seenTags.has(tag)) {
         seenTags.add(tag);
-        warnings.push({ kind: "diet", label: `bevat ${INGREDIENT_TAG_LABELS[tag]}` });
+        warnings.push({ kind: "diet", label: t(locale, "diet.contains", { item: getIngredientTagLabel(tag, locale) }) });
       }
     }
   }
@@ -37,7 +42,7 @@ export function computeDietWarnings(
     const ingredient = ri.expand?.ingredient;
     if (ingredient && allergyIds.has(ingredient.id) && !seenIngredients.has(ingredient.id)) {
       seenIngredients.add(ingredient.id);
-      warnings.push({ kind: "allergy", label: `bevat ${ingredient.name.toLowerCase()}` });
+      warnings.push({ kind: "allergy", label: t(locale, "diet.contains", { item: ingredient.name.toLowerCase() }) });
     }
   }
 
@@ -58,13 +63,14 @@ export interface AttendeeWarning {
  * of empty rows. */
 export function computeAttendeeWarnings(
   recipeIngredients: RecipeIngredientExpanded[],
-  attendees: Pick<TrekUser, "id" | "name" | "diet_tags" | "allergy_ingredients">[]
+  attendees: Pick<TrekUser, "id" | "name" | "diet_tags" | "allergy_ingredients">[],
+  locale: Locale = DEFAULT_LOCALE
 ): AttendeeWarning[] {
   return attendees
     .map((attendee) => ({
       userId: attendee.id,
       userName: attendee.name,
-      warnings: computeDietWarnings(recipeIngredients, attendee),
+      warnings: computeDietWarnings(recipeIngredients, attendee, locale),
     }))
     .filter((entry) => entry.warnings.length > 0);
 }

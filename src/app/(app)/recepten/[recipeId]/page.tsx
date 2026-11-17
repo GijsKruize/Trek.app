@@ -5,8 +5,11 @@ import { getServerPocketBase, getCurrentUser } from "@/lib/pocketbase/server";
 import { getRecipeDetail } from "@/lib/api/recipes";
 import { fileUrl } from "@/lib/pocketbase/client";
 import { WarningBadgeList } from "@/components/badges/WarningBadge";
-import { INGREDIENT_TAG_LABELS } from "@/lib/constants/ingredientTags";
-import { UNIT_LABELS } from "@/lib/constants/units";
+import { getIngredientTagLabel } from "@/lib/constants/ingredientTags";
+import { UNIT_LABELS, UNIT_LABELS_EN } from "@/lib/constants/units";
+import { getLocale } from "@/lib/i18n/server";
+import { t, type Locale } from "@/lib/i18n/translations";
+import type { Unit } from "@/lib/pocketbase/types";
 
 /** The seed/editorial content writes instructions as full sentences
  * separated by ". " — split them into numbered steps for the recipe
@@ -18,6 +21,10 @@ function splitInstructionsIntoSteps(instructions: string): string[] {
     .filter(Boolean);
 }
 
+function unitLabel(unit: Unit, locale: Locale): string {
+  return locale === "en" ? UNIT_LABELS_EN[unit] : UNIT_LABELS[unit];
+}
+
 export default async function RecipeDetailPage({
   params,
 }: {
@@ -26,10 +33,11 @@ export default async function RecipeDetailPage({
   const { recipeId } = await params;
   const pb = await getServerPocketBase();
   const user = await getCurrentUser();
+  const locale = await getLocale();
 
   let detail;
   try {
-    detail = await getRecipeDetail(pb, recipeId, user);
+    detail = await getRecipeDetail(pb, recipeId, user, locale);
   } catch {
     notFound();
   }
@@ -57,13 +65,13 @@ export default async function RecipeDetailPage({
           {recipe.servings > 0 && (
             <span className="inline-flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />
-              {recipe.servings} personen
+              {t(locale, "recipe.servings", { count: recipe.servings })}
             </span>
           )}
           {recipe.prep_minutes > 0 && (
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
-              {recipe.prep_minutes} min
+              {t(locale, "recipe.minutes", { count: recipe.prep_minutes })}
             </span>
           )}
         </div>
@@ -71,16 +79,16 @@ export default async function RecipeDetailPage({
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-title-3 font-heading font-bold">Ingrediënten</h2>
+        <h2 className="text-title-3 font-heading font-bold">{t(locale, "recipe.ingredients")}</h2>
         <ul className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-4">
           {ingredients.map((ri) => (
             <li key={ri.id} className="flex items-center justify-between gap-3 py-1.5 text-body">
               <span>
-                {ri.expand?.ingredient?.name ?? "Ingrediënt"}
+                {ri.expand?.ingredient?.name ?? t(locale, "recipe.ingredientFallback")}
                 {ri.note && <span className="text-muted-foreground"> ({ri.note})</span>}
               </span>
               <span className="whitespace-nowrap text-muted-foreground">
-                {ri.quantity} {UNIT_LABELS[ri.unit]}
+                {ri.quantity} {unitLabel(ri.unit, locale)}
               </span>
             </li>
           ))}
@@ -89,7 +97,7 @@ export default async function RecipeDetailPage({
 
       {ingredients.some((ri) => (ri.expand?.ingredient?.tags ?? []).length > 0) && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-title-3 font-heading font-bold">Allergenen &amp; kenmerken</h2>
+          <h2 className="text-title-3 font-heading font-bold">{t(locale, "recipe.allergensTitle")}</h2>
           <div className="flex flex-wrap gap-1.5">
             {Array.from(
               new Set(ingredients.flatMap((ri) => ri.expand?.ingredient?.tags ?? []))
@@ -98,7 +106,7 @@ export default async function RecipeDetailPage({
                 key={tag}
                 className="rounded-full bg-surface-2 px-2.5 py-1 text-caption font-medium text-muted-foreground"
               >
-                {INGREDIENT_TAG_LABELS[tag]}
+                {getIngredientTagLabel(tag, locale)}
               </span>
             ))}
           </div>
@@ -106,7 +114,7 @@ export default async function RecipeDetailPage({
       )}
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-title-3 font-heading font-bold">Bereiding</h2>
+        <h2 className="text-title-3 font-heading font-bold">{t(locale, "recipe.steps")}</h2>
         <ol className="flex flex-col gap-3">
           {steps.map((step, i) => (
             <li key={i} className="flex gap-3">

@@ -11,15 +11,18 @@ import type { RecipeOption } from "@/lib/api/recipes";
 import { fileUrl } from "@/lib/pocketbase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
 export function RecipePicker({
   eventId,
   options,
   attendeeCount,
+  locale = DEFAULT_LOCALE,
 }: {
   eventId: string;
   options: RecipeOption[];
   attendeeCount: number;
+  locale?: Locale;
 }) {
   const { pb } = useAuth();
   const router = useRouter();
@@ -31,10 +34,10 @@ export function RecipePicker({
     setLoading(true);
     try {
       await chooseRecipe(pb, eventId, selected);
-      toast.success("Recept gekozen.");
+      toast.success(t(locale, "recipePicker.chosen"));
       router.refresh();
     } catch {
-      toast.error("Geen verbinding. Probeer het nog eens.");
+      toast.error(t(locale, "common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -43,11 +46,14 @@ export function RecipePicker({
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
       <div>
-        <h2 className="text-title-3 font-heading font-bold">Kies het recept</h2>
+        <h2 className="text-title-3 font-heading font-bold">{t(locale, "recipePicker.title")}</h2>
         <p className="text-caption text-muted-foreground mt-1">
           {attendeeCount > 0
-            ? `Op basis van de dieetwensen en allergieën van ${attendeeCount} ${attendeeCount === 1 ? "aanmelding" : "aanmeldingen"}.`
-            : "Nog niemand heeft gereageerd — wacht op de RSVP's voor het beste advies, of kies nu al."}
+            ? t(locale, "recipePicker.helpWithCount", {
+                count: attendeeCount,
+                label: t(locale, attendeeCount === 1 ? "recipePicker.rsvpWord1" : "recipePicker.rsvpWordMany"),
+              })
+            : t(locale, "recipePicker.helpNoCount")}
         </p>
       </div>
       <ul className="flex flex-col gap-2">
@@ -76,10 +82,10 @@ export function RecipePicker({
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="text-label">{recipe.title}</span>
                   {conflicts.length === 0 ? (
-                    <span className="text-caption text-success">Geen conflicten</span>
+                    <span className="text-caption text-success">{t(locale, "recipePicker.noConflicts")}</span>
                   ) : (
                     <span className="text-caption text-warning">
-                      Conflict bij {conflicts.map((c) => c.userName).join(", ")}
+                      {t(locale, "recipePicker.conflictWith", { names: conflicts.map((c) => c.userName).join(", ") })}
                     </span>
                   )}
                 </div>
@@ -90,7 +96,7 @@ export function RecipePicker({
         })}
       </ul>
       <Button onClick={handleConfirm} disabled={!selected || loading} className="mt-1">
-        {loading ? "Bezig..." : "Dit wordt het"}
+        {loading ? t(locale, "common.busy") : t(locale, "recipePicker.confirm")}
       </Button>
     </div>
   );

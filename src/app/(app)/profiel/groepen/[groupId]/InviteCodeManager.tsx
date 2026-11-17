@@ -7,13 +7,16 @@ import { useAuth } from "@/hooks/useAuth";
 import type { GroupInvite } from "@/lib/pocketbase/types";
 import { generateInviteCode } from "@/lib/api/groups";
 import { Button } from "@/components/ui/button";
+import { t, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/translations";
 
 export function InviteCodeManager({
   groupId,
   initialInvite,
+  locale = DEFAULT_LOCALE,
 }: {
   groupId: string;
   initialInvite: GroupInvite | null;
+  locale?: Locale;
 }) {
   const { user, pb } = useAuth();
   const [invite, setInvite] = useState(initialInvite);
@@ -34,7 +37,7 @@ export function InviteCodeManager({
       });
       setInvite(created);
     } catch {
-      toast.error("Geen verbinding. Probeer het nog eens.");
+      toast.error(t(locale, "common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -43,29 +46,29 @@ export function InviteCodeManager({
   async function copyCode() {
     if (!invite) return;
     await navigator.clipboard.writeText(invite.code);
-    toast.success("Code gekopieerd.");
+    toast.success(t(locale, "invite.copied"));
   }
 
   if (!invite) {
     return (
       <Button onClick={createInvite} disabled={loading} className="w-full">
-        Uitnodigingscode maken
+        {t(locale, "invite.create")}
       </Button>
     );
   }
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
-      <p className="text-caption text-muted-foreground">Deel deze code — iedereen met een account kan hem inwisselen.</p>
+      <p className="text-caption text-muted-foreground">{t(locale, "invite.help")}</p>
       <div className="flex items-center justify-between">
         <span className="text-title-2 font-heading font-extrabold tracking-wide">{invite.code}</span>
-        <Button variant="outline" size="icon" onClick={copyCode} aria-label="Kopiëren">
+        <Button variant="outline" size="icon" onClick={copyCode} aria-label={t(locale, "common.copy")}>
           <Copy className="h-4 w-4" />
         </Button>
       </div>
       <Button variant="ghost" size="sm" onClick={createInvite} disabled={loading} className="self-start">
         <RefreshCw className="h-4 w-4" />
-        Nieuwe code
+        {t(locale, "invite.newCode")}
       </Button>
     </div>
   );

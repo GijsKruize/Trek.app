@@ -7,8 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { t, type Locale } from "@/lib/i18n/translations";
 
-export function LoginForm() {
+export function LoginForm({ locale }: { locale: Locale }) {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,7 +27,7 @@ export function LoginForm() {
       router.push(searchParams.get("next") ?? "/feed");
       router.refresh();
     } catch {
-      setError("Inloggen is niet gelukt. Klopt je e-mail en wachtwoord?");
+      setError(t(locale, "auth.loginError"));
     } finally {
       setLoading(false);
     }
@@ -35,14 +36,12 @@ export function LoginForm() {
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-title-1 font-heading font-extrabold">Welkom terug.</h1>
-        <p className="text-body text-muted-foreground mt-1">
-          Log in om te zien wat de groep eet.
-        </p>
+        <h1 className="text-title-1 font-heading font-extrabold">{t(locale, "auth.welcomeBack")}</h1>
+        <p className="text-body text-muted-foreground mt-1">{t(locale, "auth.loginSubtitle")}</p>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email">E-mail</Label>
+          <Label htmlFor="email">{t(locale, "auth.email")}</Label>
           <Input
             id="email"
             type="email"
@@ -53,7 +52,7 @@ export function LoginForm() {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Wachtwoord</Label>
+          <Label htmlFor="password">{t(locale, "auth.password")}</Label>
           <Input
             id="password"
             type="password"
@@ -69,13 +68,13 @@ export function LoginForm() {
           </p>
         )}
         <Button type="submit" size="lg" disabled={loading} className="mt-2">
-          {loading ? "Bezig..." : "Inloggen"}
+          {loading ? t(locale, "common.busy") : t(locale, "auth.loginButton")}
         </Button>
       </form>
       <p className="text-center text-body text-muted-foreground">
-        Nog geen account?{" "}
+        {t(locale, "auth.noAccount")}{" "}
         <Link href="/register" className="text-brand-text font-medium">
-          Maak er een.
+          {t(locale, "auth.createOne")}
         </Link>
       </p>
     </div>

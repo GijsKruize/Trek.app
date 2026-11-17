@@ -3,6 +3,8 @@ import { MapPin } from "lucide-react";
 import { getServerPocketBase, getCurrentUser } from "@/lib/pocketbase/server";
 import { getActiveInvite, getGroupMembers } from "@/lib/api/groups";
 import type { Group } from "@/lib/pocketbase/types";
+import { getLocale } from "@/lib/i18n/server";
+import { t } from "@/lib/i18n/translations";
 import { InviteCodeManager } from "./InviteCodeManager";
 
 export default async function GroupDetailPage({
@@ -15,6 +17,7 @@ export default async function GroupDetailPage({
   if (!user) return null;
 
   const pb = await getServerPocketBase();
+  const locale = await getLocale();
 
   let group: Group;
   try {
@@ -41,15 +44,15 @@ export default async function GroupDetailPage({
 
       <div className="flex flex-col gap-2">
         <h2 className="text-title-3 font-heading font-bold">
-          Leden <span className="text-muted-foreground font-sans font-normal">({members.length})</span>
+          {t(locale, "groups.membersWithCount", { count: members.length })}
         </h2>
         <ul className="flex flex-col gap-1">
           {members.map((m) => (
             <li key={m.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
-              <span className="text-body">{m.expand?.user?.name ?? "Onbekend"}</span>
+              <span className="text-body">{m.expand?.user?.name ?? t(locale, "groups.unknown")}</span>
               {m.role === "admin" && (
                 <span className="rounded-full bg-surface-2 px-2.5 py-1 text-caption font-medium text-muted-foreground">
-                  beheerder
+                  {t(locale, "groups.admin")}
                 </span>
               )}
             </li>
@@ -59,8 +62,8 @@ export default async function GroupDetailPage({
 
       {isAdmin && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-title-3 font-heading font-bold">Uitnodigen</h2>
-          <InviteCodeManager groupId={groupId} initialInvite={activeInvite} />
+          <h2 className="text-title-3 font-heading font-bold">{t(locale, "groups.invite")}</h2>
+          <InviteCodeManager groupId={groupId} initialInvite={activeInvite} locale={locale} />
         </div>
       )}
     </div>
